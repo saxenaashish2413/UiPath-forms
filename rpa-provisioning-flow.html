@@ -1,0 +1,122 @@
+<title>RPA Provisioning Flow</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;700;800&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@500&display=swap">
+<style>
+/* Layout: a header strip with the key facts, then one swimlane diagram (requester → queue → REFramework → Orchestrator API) that scrolls sideways on phones. */
+:root {
+  --bg: #F3F5F9; --surface: #FFFFFF; --ink: #142033; --muted: #5A6880; --rule: #D7DEEA;
+  --req: #0B3D91; --req-tint: #E8EEF9;
+  --orc: #B45309; --orc-tint: #FBF0E2;
+  --per: #0F766E; --per-tint: #E3F4F1;
+  --api: #4338CA; --api-tint: #ECEBFB;
+  --warn: #B42318; --warn-tint: #FDECEA;
+  --on-accent: #FFFFFF;
+  --f-display: "Archivo", "Segoe UI", system-ui, sans-serif;
+  --f-body: "IBM Plex Sans", "Segoe UI", system-ui, sans-serif;
+  --f-mono: "IBM Plex Mono", ui-monospace, Consolas, monospace;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --bg: #0E1420; --surface: #161E2D; --ink: #E7ECF5; --muted: #9AA7BD; --rule: #2A3549;
+  --req: #7EA6F2; --req-tint: #172440; --orc: #F2A65A; --orc-tint: #2D2114; --per: #4FD1C1; --per-tint: #102A28;
+  --api: #A5A0FA; --api-tint: #1E1D3D; --warn: #F98C80; --warn-tint: #331715; --on-accent: #0E1420; color-scheme: dark; } }
+:root[data-theme="dark"] {
+  --bg: #0E1420; --surface: #161E2D; --ink: #E7ECF5; --muted: #9AA7BD; --rule: #2A3549;
+  --req: #7EA6F2; --req-tint: #172440; --orc: #F2A65A; --orc-tint: #2D2114; --per: #4FD1C1; --per-tint: #102A28;
+  --api: #A5A0FA; --api-tint: #1E1D3D; --warn: #F98C80; --warn-tint: #331715; --on-accent: #0E1420; color-scheme: dark; }
+body { background: var(--bg); color: var(--ink); font-family: var(--f-body); font-size: 15px; line-height: 1.5; }
+.wrap { max-width: 1240px; margin: 0 auto; padding-inline: 16px; padding-block: 28px 40px; display: grid; gap: 22px; }
+header { display: grid; gap: 8px; }
+.eyebrow { font-family: var(--f-mono); font-size: 12px; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
+h1 { font-family: var(--f-display); font-weight: 800; font-size: clamp(26px, 4vw, 40px); line-height: 1.1; margin: 0; text-wrap: balance; }
+h1 span { color: var(--req); }
+.lede { margin: 0; max-width: 68ch; color: var(--muted); }
+.facts { display: flex; flex-wrap: wrap; gap: 10px; }
+.fact { display: flex; align-items: baseline; gap: 8px; padding: 8px 14px; background: var(--surface); border: 1px solid var(--rule); border-radius: 999px; font-size: 13px; }
+.fact b { font-family: var(--f-display); font-size: 17px; font-variant-numeric: tabular-nums; }
+.fact.req b { color: var(--req); } .fact.orc b { color: var(--orc); } .fact.per b { color: var(--per); } .fact.api b { color: var(--api); }
+.diagram { background: var(--surface); border: 1px solid var(--rule); border-radius: 18px; overflow-x: auto; }
+.diagram svg { display: block; width: 100%; min-width: 860px; height: auto; }
+.legend { display: flex; flex-wrap: wrap; gap: 18px; font-size: 13px; color: var(--muted); }
+.legend span { display: inline-flex; align-items: center; gap: 8px; }
+.sw { width: 28px; height: 0; border-top: 2px solid var(--muted); }
+.sw.dash { border-top-style: dashed; } .sw.back { border-color: var(--req); } .sw.apil { border-color: var(--api); } .sw.wr { border-color: var(--warn); }
+
+/* SVG styling through tokens so both themes read */
+.lane { stroke: none; } .lane-req { fill: var(--req-tint); } .lane-orc { fill: var(--orc-tint); } .lane-per { fill: var(--per-tint); } .lane-api { fill: var(--api-tint); }
+.lh-req { fill: var(--req); } .lh-orc { fill: var(--orc); } .lh-per { fill: var(--per); } .lh-api { fill: var(--api); }
+.lane-t { font-family: var(--f-display); font-weight: 700; font-size: 17px; fill: var(--on-accent); text-anchor: middle; }
+.lane-s { font-family: var(--f-mono); font-size: 10.5px; fill: var(--on-accent); opacity: .85; text-anchor: middle; letter-spacing: .04em; }
+.n { fill: var(--surface); stroke-width: 1.6; }
+.n-req { stroke: var(--req); } .n-orc { stroke: var(--orc); } .n-per { stroke: var(--per); } .n-api { stroke: var(--api); }
+.k-start.n-req { fill: var(--req); } .k-start.n-orc { fill: var(--orc); } .k-start.n-per { fill: var(--per); }
+.k-form { fill: var(--req); stroke-width: 0; }
+.k-queue { fill: var(--orc); stroke-width: 0; }
+.k-decision { fill: var(--surface); stroke-width: 2; }
+.k-warn { fill: var(--warn-tint); stroke: var(--warn); }
+.n-line { stroke: var(--orc); stroke-width: 1.6; }
+.t { font-family: var(--f-body); font-weight: 600; font-size: 13.5px; fill: var(--ink); text-anchor: middle; }
+.s { font-family: var(--f-body); font-size: 11px; fill: var(--muted); text-anchor: middle; }
+.t-start, .t-form, .t-queue, .s-start, .s-form, .s-queue { fill: var(--on-accent); }
+.s-start, .s-form, .s-queue { opacity: .85; }
+.t-api { font-family: var(--f-mono); font-weight: 500; font-size: 12px; fill: var(--api); }
+.s-api { fill: var(--api); }
+.t-warn { fill: var(--warn); }
+.e { fill: none; stroke: var(--muted); stroke-width: 1.7; }
+.e-dash { stroke-dasharray: 5 5; }
+.e-back { stroke: var(--req); }
+.e-api { stroke: var(--api); }
+.e-ret { stroke-dasharray: 3 4; }
+.e-warn { stroke: var(--warn); stroke-dasharray: 4 4; }
+.ah, .ah-d { fill: var(--muted); }
+.lbl-bg { fill: var(--surface); stroke: var(--rule); }
+.lbl { font-family: var(--f-mono); font-size: 10.5px; fill: var(--ink); }
+.panel-t { font-family: var(--f-mono); font-size: 11px; letter-spacing: .08em; text-transform: uppercase; fill: var(--warn); text-anchor: middle; }
+.notes { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 14px; }
+.note { background: var(--surface); border: 1px solid var(--rule); border-radius: 14px; padding: 14px 16px; min-width: 0; }
+.note h2 { font-family: var(--f-display); font-size: 15px; margin: 0 0 4px; }
+.note p { margin: 0; font-size: 13.5px; color: var(--muted); }
+.note code { font-family: var(--f-mono); font-size: 12px; color: var(--ink); }
+.note.req h2 { color: var(--req); } .note.orc h2 { color: var(--orc); } .note.per h2 { color: var(--per); } .note.api h2 { color: var(--api); }
+</style>
+
+<div class="wrap">
+  <header>
+    <div class="eyebrow">UiPath Forms · Studio · Orchestrator 2025.10.2 standalone · REFramework</div>
+    <h1>RPA Change &amp; Deployment Request, <span>end to end</span></h1>
+    <p class="lede">From the requester filling in the UiPath Form to a provisioned Orchestrator folder with the right people and roles. Everything entity-specific comes from RPA_Provisioning_Config.xlsx.</p>
+    <div class="facts">
+      <div class="fact req"><b>5</b> form sections</div>
+      <div class="fact orc"><b>6</b> config sheets</div>
+      <div class="fact req"><b>RPA-2026-00042</b> request ID format</div>
+      <div class="fact per"><b>7</b> REFramework steps</div>
+      <div class="fact api"><b>6</b> Orchestrator API calls</div>
+    </div>
+  </header>
+
+  <div class="diagram"><svg viewBox="0 0 1160 1880" role="img" aria-labelledby="dg-title" xmlns="http://www.w3.org/2000/svg">
+<title id="dg-title">End-to-end flow: UiPath Form request to provisioned Orchestrator folder</title>
+<defs>
+<marker id="ah" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" class="ah"/></marker>
+<marker id="ah-d" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" class="ah-d"/></marker>
+</defs>
+<rect class="lane lane-req" x="20" y="20" width="275" height="1840" rx="16"/><rect class="lane-head lh-req" x="20" y="20" width="275" height="58" rx="16"/><rect class="lh-req" x="20" y="62" width="275" height="16"/><text class="lane-t" x="157.5" y="46">Requester</text><text class="lane-s" x="157.5" y="66">UiPath Assistant · attended</text><rect class="lane lane-orc" x="305" y="20" width="275" height="1840" rx="16"/><rect class="lane-head lh-orc" x="305" y="20" width="275" height="58" rx="16"/><rect class="lh-orc" x="305" y="62" width="275" height="16"/><text class="lane-t" x="442.5" y="46">Orchestrator</text><text class="lane-s" x="442.5" y="66">Queue · Assets · Config</text><rect class="lane lane-per" x="590" y="20" width="275" height="1840" rx="16"/><rect class="lane-head lh-per" x="590" y="20" width="275" height="58" rx="16"/><rect class="lh-per" x="590" y="62" width="275" height="16"/><text class="lane-t" x="727.5" y="46">Performer</text><text class="lane-s" x="727.5" y="66">REFramework · unattended</text><rect class="lane lane-api" x="875" y="20" width="275" height="1840" rx="16"/><rect class="lane-head lh-api" x="875" y="20" width="275" height="58" rx="16"/><rect class="lh-api" x="875" y="62" width="275" height="16"/><text class="lane-t" x="1012.5" y="46">Orchestrator REST API</text><text class="lane-s" x="1012.5" y="66">Standalone 2025.10.2</text>
+<text class="panel-t" x="1010" y="1003">Exception handling</text>
+<path class="e" d="M160,147.0 L160,183.0" marker-end="url(#ah)"/><path class="e" d="M160,237.0 L160,273.0" marker-end="url(#ah)"/><path class="e" d="M160,327.0 L160,368.0" marker-end="url(#ah)"/><path class="e" d="M160,432.0 L160,468.0" marker-end="url(#ah)"/><path class="e" d="M160,542.0 L160,583.0" marker-end="url(#ah)"/><rect class="lbl-bg" x="188" y="555" width="50.400000000000006" height="18" rx="9"/><text class="lbl" x="194" y="568" text-anchor="start">Submit</text><path class="e" d="M160,637.0 L160,675.0" marker-end="url(#ah)"/><path class="e" d="M160,745.0 L160,783.0" marker-end="url(#ah)"/><rect class="lbl-bg" x="184" y="753" width="31.200000000000003" height="18" rx="9"/><text class="lbl" x="190" y="766" text-anchor="start">Yes</text><path class="e" d="M160,837.0 L160,873.0" marker-end="url(#ah)"/><path class="e" d="M160,927.0 L160,960.0" marker-end="url(#ah)"/><path class="e" d="M160,1030.0 L160,1068.0" marker-end="url(#ah)"/><rect class="lbl-bg" x="184" y="1036" width="24.8" height="18" rx="9"/><text class="lbl" x="190" y="1049" text-anchor="start">No</text><path class="e e-back" d="M85.0,710 L23.0,710 L23.0,400 L45.0,400" marker-end="url(#ah)"/><rect class="lbl-bg" x="25.0" y="548" width="88.80000000000001" height="18" rx="9"/><text class="lbl" x="31.0" y="561" text-anchor="start">errors shown</text><path class="e e-back" d="M65.0,995 L23.0,995 L23.0,810 L45.0,810" marker-end="url(#ah)"/><rect class="lbl-bg" x="25.0" y="934" width="82.4" height="18" rx="9"/><text class="lbl" x="31.0" y="947" text-anchor="start">next number</text><path class="e e-dash" d="M255.0,505 L310,505 L310,560" marker-end="url(#ah-d)"/><rect class="lbl-bg" x="310" y="568" width="88.80000000000001" height="18" rx="9"/><text class="lbl" x="316" y="581" text-anchor="start">Cancel → end</text><path class="e e-dash" d="M320.0,210 L275.0,210" marker-end="url(#ah-d)"/><path class="e e-dash" d="M445,241 L445,300 L583,300 L583,1185 L615.0,1185" marker-end="url(#ah-d)"/><path class="e" d="M275.0,900 L320.0,900" marker-end="url(#ah)"/><path class="e" d="M445,931.0 L445,973.0" marker-end="url(#ah)"/><path class="e" d="M545.0,1000 L615.0,1000" marker-end="url(#ah)"/><path class="e" d="M730,1027.0 L730,1068.0" marker-end="url(#ah)"/><path class="e" d="M730,1122.0 L730,1158.0" marker-end="url(#ah)"/><path class="e" d="M730,1212.0 L730,1248.0" marker-end="url(#ah)"/><path class="e" d="M730,1302.0 L730,1338.0" marker-end="url(#ah)"/><path class="e" d="M730,1392.0 L730,1428.0" marker-end="url(#ah)"/><path class="e" d="M730,1482.0 L730,1518.0" marker-end="url(#ah)"/><path class="e" d="M730,1572.0 L730,1608.0" marker-end="url(#ah)"/><path class="e" d="M730,1662.0 L730,1703.0" marker-end="url(#ah)"/><path class="e" d="M730,1757.0 L730,1798.0" marker-end="url(#ah)"/><path class="e e-api" d="M845.0,1268 L885.0,1268" marker-end="url(#ah)"/><path class="e e-api e-ret" d="M885.0,1282 L845.0,1282" marker-end="url(#ah)"/><path class="e e-api" d="M845.0,1358 L885.0,1358" marker-end="url(#ah)"/><path class="e e-api e-ret" d="M885.0,1372 L845.0,1372" marker-end="url(#ah)"/><path class="e e-api" d="M845.0,1448 L885.0,1448" marker-end="url(#ah)"/><path class="e e-api e-ret" d="M885.0,1462 L845.0,1462" marker-end="url(#ah)"/><path class="e e-api" d="M845.0,1538 L885.0,1538" marker-end="url(#ah)"/><path class="e e-api e-ret" d="M885.0,1552 L845.0,1552" marker-end="url(#ah)"/><path class="e e-api" d="M845.0,1628 L885.0,1628" marker-end="url(#ah)"/><path class="e e-api e-ret" d="M885.0,1642 L845.0,1642" marker-end="url(#ah)"/><path class="e e-dash" d="M560.0,400 L598,400 L598,1268 L615.0,1268" marker-end="url(#ah-d)"/><path class="e e-dash" d="M615.0,1730 L445,1730 L445,1027.0" marker-end="url(#ah-d)"/><rect class="lbl-bg" x="447" y="1688" width="108.0" height="18" rx="9"/><text class="lbl" x="453" y="1701" text-anchor="start">status + output</text><path class="e e-warn" d="M845.0,1110 L885,1065" marker-end="url(#ah)"/><path class="e e-warn" d="M845.0,1200 L885,1150" marker-end="url(#ah)"/>
+<rect class="n n-req k-start" x="45.0" y="93.0" width="230" height="54" rx="27.0"/><text class="t t-start" x="160" y="116">Requester opens the process</text><text class="s s-start" x="160" y="134">UiPath Assistant</text><rect class="n n-req k-step" x="45.0" y="183.0" width="230" height="54" rx="10"/><text class="t t-step" x="160" y="206">Load configuration</text><text class="s s-step" x="160" y="224">6 sheets → DataTables</text><rect class="n n-req k-step" x="45.0" y="273.0" width="230" height="54" rx="10"/><text class="t t-step" x="160" y="296">Get Entity Configuration</text><text class="s s-step" x="160" y="314">Entity → Policies · Deployments</text><rect class="n n-req k-form" x="45.0" y="368.0" width="230" height="64" rx="10"/><text class="t t-form" x="160" y="396">UiPath Form</text><text class="s s-form" x="160" y="414">5 sections · logo · live lists</text><polygon class="n n-req k-decision" points="160,468.0 255.0,505 160,542.0 65.0,505"/><text class="t t-decision" x="160" y="510">Submit or Cancel?</text><rect class="n n-req k-step" x="45.0" y="583.0" width="230" height="54" rx="10"/><text class="t t-step" x="160" y="606">Validate request</text><text class="s s-step" x="160" y="624">against the config sheets</text><polygon class="n n-req k-decision" points="160,675.0 235.0,710 160,745.0 85.0,710"/><text class="t t-decision" x="160" y="715">Valid?</text><rect class="n n-req k-step" x="45.0" y="783.0" width="230" height="54" rx="10"/><text class="t t-step" x="160" y="806">Generate Request ID</text><text class="s s-step" x="160" y="824">RPA-2026-00042 · no local counter</text><rect class="n n-req k-step" x="45.0" y="873.0" width="230" height="54" rx="10"/><text class="t t-step" x="160" y="896">Add Queue Item</text><text class="s s-step" x="160" y="914">Reference = Request ID</text><polygon class="n n-req k-decision" points="160,960.0 255.0,995 160,1030.0 65.0,995"/><text class="t t-decision" x="160" y="1000">Reference taken?</text><rect class="n n-req k-start" x="45.0" y="1068.0" width="230" height="54" rx="27.0"/><text class="t t-start" x="160" y="1091">Show Request ID</text><text class="s s-start" x="160" y="1109">confirmation to requester</text><path class="n n-orc k-data" d="M320.0,187.0 q0,-8 125.0,-8 q125.0,0 125.0,8 v46 q0,8 -125.0,8 q-125.0,0 -125.0,-8 z"/><path class="n-line" d="M320.0,187.0 q125.0,10 250,0" fill="none"/><text class="t t-data" x="445" y="206">RPA_Provisioning_Config.xlsx</text><text class="s s-data" x="445" y="224">Entities · Policies · Mappings · Roles · Settings</text><path class="n n-orc k-data" d="M330.0,379.0 q0,-8 115.0,-8 q115.0,0 115.0,8 v42 q0,8 -115.0,8 q-115.0,0 -115.0,-8 z"/><path class="n-line" d="M330.0,379.0 q115.0,10 230,0" fill="none"/><text class="t t-data" x="445" y="396">Credential assets</text><text class="s s-data" x="445" y="414">Client ID / secret · SMTP</text><rect class="n n-orc k-queue" x="320.0" y="869.0" width="250" height="62" rx="10"/><text class="t t-queue" x="445" y="896">RPA_Provisioning_Requests</text><text class="s s-queue" x="445" y="914">queue · unique references · auto retry</text><rect class="n n-orc k-start" x="345.0" y="973.0" width="200" height="54" rx="27.0"/><text class="t t-start" x="445" y="996">Queue trigger</text><text class="s s-start" x="445" y="1014">starts the performer</text><rect class="n n-per k-step" x="615.0" y="973.0" width="230" height="54" rx="10"/><text class="t t-step" x="730" y="996">Get Transaction</text><text class="s s-step" x="730" y="1014">REFramework GetTransactionData</text><rect class="n n-per k-step" x="615.0" y="1068.0" width="230" height="54" rx="10"/><text class="t t-step" x="730" y="1091">Validate again</text><text class="s s-step" x="730" y="1109">same rules, fresh config</text><rect class="n n-per k-step" x="615.0" y="1158.0" width="230" height="54" rx="10"/><text class="t t-step" x="730" y="1181">Resolve target</text><text class="s s-step" x="730" y="1199">folder path + user/group</text><rect class="n n-per k-step" x="615.0" y="1248.0" width="230" height="54" rx="10"/><text class="t t-step" x="730" y="1271">Authenticate</text><text class="s s-step" x="730" y="1289">client credentials token</text><rect class="n n-per k-step" x="615.0" y="1338.0" width="230" height="54" rx="10"/><text class="t t-step" x="730" y="1361">Create / Get Folder</text><text class="s s-step" x="730" y="1379">idempotent · Folder ID</text><rect class="n n-per k-step" x="615.0" y="1428.0" width="230" height="54" rx="10"/><text class="t t-step" x="730" y="1451">Get Role IDs</text><text class="s s-step" x="730" y="1469">by name, from Roles sheet</text><rect class="n n-per k-step" x="615.0" y="1518.0" width="230" height="54" rx="10"/><text class="t t-step" x="730" y="1541">Find user / group</text><text class="s s-step" x="730" y="1559">Orchestrator account Id</text><rect class="n n-per k-step" x="615.0" y="1608.0" width="230" height="54" rx="10"/><text class="t t-step" x="730" y="1631">Assign + apply roles</text><text class="s s-step" x="730" y="1649">keeps existing · verifies</text><rect class="n n-per k-step" x="615.0" y="1703.0" width="230" height="54" rx="10"/><text class="t t-step" x="730" y="1726">Update Queue Item</text><text class="s s-step" x="730" y="1744">progress + ProvisioningResult</text><rect class="n n-per k-start" x="615.0" y="1798.0" width="230" height="54" rx="27.0"/><text class="t t-start" x="730" y="1821">Email notification</text><text class="s s-start" x="730" y="1839">requester + CoE</text><rect class="n n-api k-api" x="885.0" y="1253.0" width="250" height="44" rx="10"/><text class="t t-api" x="1010" y="1280">POST /identity/connect/token</text><rect class="n n-api k-api" x="885.0" y="1343.0" width="250" height="44" rx="10"/><text class="t t-api" x="1010" y="1370">GET · POST odata/Folders</text><rect class="n n-api k-api" x="885.0" y="1433.0" width="250" height="44" rx="10"/><text class="t t-api" x="1010" y="1460">GET odata/Roles</text><rect class="n n-api k-api" x="885.0" y="1523.0" width="250" height="44" rx="10"/><text class="t t-api" x="1010" y="1550">GET odata/Users</text><rect class="n n-api k-api" x="885.0" y="1607.0" width="250" height="56" rx="10"/><text class="t t-api" x="1010" y="1631">POST Folders/AssignUsers</text><text class="s s-api" x="1010" y="1649">+ GetUsersForFolder (verify)</text><rect class="n n-api k-warn" x="885.0" y="1023.0" width="250" height="54" rx="10"/><text class="t t-warn" x="1010" y="1046">Business rule exception</text><text class="s s-warn" x="1010" y="1064">bad request / config · no retry</text><rect class="n n-api k-warn" x="885.0" y="1113.0" width="250" height="54" rx="10"/><text class="t t-warn" x="1010" y="1136">System exception</text><text class="s s-warn" x="1010" y="1154">network · HTTP · timeout → queue retry</text>
+</svg></div>
+
+  <div class="legend">
+    <span><i class="sw"></i>Main flow</span>
+    <span><i class="sw back"></i>Loop back</span>
+    <span><i class="sw dash"></i>Reads config / writes status</span>
+    <span><i class="sw apil"></i>REST call and response</span>
+    <span><i class="sw wr"></i>Exception path</span>
+  </div>
+
+  <div class="notes">
+    <div class="note req"><h2>Dynamic lists</h2><p>Changing <code>Entity</code> clears Policy Role and Deployment Movement and reloads them from EntityPolicyMapping and DeploymentMapping. No per-entity If/Else.</p></div>
+    <div class="note orc"><h2>Concurrency-safe ID</h2><p>The queue enforces unique references. If two requests pick the same number, Orchestrator rejects the second and it takes the next one.</p></div>
+    <div class="note per"><h2>Safe to retry</h2><p>Existing folders are reused and roles the account already has are kept, so a retried item never duplicates anything.</p></div>
+    <div class="note api"><h2>Configurable API</h2><p>URL, organization, tenant, scope, timeout and retry come from ApplicationSettings. Client ID and secret come from a credential asset.</p></div>
+  </div>
+</div>
