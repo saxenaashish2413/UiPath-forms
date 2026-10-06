@@ -1,0 +1,46 @@
+{
+  "name": "RPA_Change_Deployment_Request",
+  "projectId": "c052120c-9965-4cef-b311-443ccc9aa950",
+  "description": "RPA Change & Deployment Request form with entity-driven Policy Roles and Deployment Movement",
+  "main": "Main.xaml",
+  "dependencies": {
+    "UiPath.Form.Activities": "[23.10.4]",
+    "UiPath.System.Activities": "[23.10.4]"
+  },
+  "webServices": [],
+  "entitiesStores": [],
+  "schemaVersion": "4.0",
+  "studioVersion": "23.10.0.0",
+  "projectVersion": "1.0.0",
+  "runtimeOptions": {
+    "autoDispose": false,
+    "netFrameworkLazyLoading": false,
+    "isPausable": true,
+    "isAttended": true,
+    "requiresUserInteraction": true,
+    "supportsPersistence": false,
+    "workflowSerialization": "DataContract",
+    "excludedLoggedData": ["Private:*", "*password*"],
+    "executionType": "Workflow",
+    "readyForPiP": false,
+    "startsInPiP": false,
+    "mustRestoreAllDependencies": true,
+    "pipType": "ChildSession"
+  },
+  "designOptions": {
+    "projectProfile": "Development",
+    "outputType": "Process",
+    "libraryOptions": { "includeOriginalXaml": false, "privateWorkflows": [] },
+    "processOptions": { "ignoredFiles": [] },
+    "fileInfoCollection": [],
+    "modernBehavior": true
+  },
+  "expressionLanguage": "VisualBasic",
+  "entryPoints": [
+    { "filePath": "Main.xaml", "uniqueId": "4d5f78c7-f907-4ce7-b366-929dd841fee5", "input": [], "output": [] }
+  ],
+  "isTemplate": false,
+  "templateProjectData": {},
+  "publishData": {},
+  "targetFramework": "Windows"
+}

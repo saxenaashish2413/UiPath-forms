@@ -1,0 +1,137 @@
+<Activity mc:Ignorable="sap sap2010" x:Class="Main"
+  xmlns="http://schemas.microsoft.com/netfx/2009/xaml/activities"
+  xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+  xmlns:s="clr-namespace:System;assembly=System.Private.CoreLib"
+  xmlns:sap="http://schemas.microsoft.com/netfx/2009/xaml/activities/presentation"
+  xmlns:sap2010="http://schemas.microsoft.com/netfx/2010/xaml/activities/presentation"
+  xmlns:scg="clr-namespace:System.Collections.Generic;assembly=System.Private.CoreLib"
+  xmlns:sco="clr-namespace:System.Collections.ObjectModel;assembly=System.Private.CoreLib"
+  xmlns:ui="http://schemas.uipath.com/workflow/activities"
+  xmlns:uf="clr-namespace:UiPath.Form.Activities;assembly=UiPath.Form.Activities"
+  xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+  <VisualBasic.Settings>
+    <x:Null />
+  </VisualBasic.Settings>
+  <TextExpression.NamespacesForImplementation>
+    <sco:Collection x:TypeArguments="x:String">
+      <x:String>System</x:String>
+      <x:String>System.Activities</x:String>
+      <x:String>System.Activities.Statements</x:String>
+      <x:String>System.Collections.Generic</x:String>
+      <x:String>System.Linq</x:String>
+      <x:String>Newtonsoft.Json</x:String>
+      <x:String>Newtonsoft.Json.Linq</x:String>
+      <x:String>UiPath.Core</x:String>
+      <x:String>UiPath.Core.Activities</x:String>
+      <x:String>UiPath.Form.Activities</x:String>
+    </sco:Collection>
+  </TextExpression.NamespacesForImplementation>
+  <TextExpression.ReferencesForImplementation>
+    <sco:Collection x:TypeArguments="AssemblyReference">
+      <AssemblyReference>Microsoft.VisualBasic</AssemblyReference>
+      <AssemblyReference>mscorlib</AssemblyReference>
+      <AssemblyReference>Newtonsoft.Json</AssemblyReference>
+      <AssemblyReference>System</AssemblyReference>
+      <AssemblyReference>System.Activities</AssemblyReference>
+      <AssemblyReference>System.Collections</AssemblyReference>
+      <AssemblyReference>System.Core</AssemblyReference>
+      <AssemblyReference>System.Linq</AssemblyReference>
+      <AssemblyReference>System.Private.CoreLib</AssemblyReference>
+      <AssemblyReference>System.Runtime</AssemblyReference>
+      <AssemblyReference>UiPath.System.Activities</AssemblyReference>
+      <AssemblyReference>UiPath.Form.Activities</AssemblyReference>
+    </sco:Collection>
+  </TextExpression.ReferencesForImplementation>
+  <Sequence DisplayName="RPA Change &amp; Deployment Request">
+    <Sequence.Variables>
+      <Variable x:TypeArguments="x:String" Name="strEntityConfig" />
+      <Variable x:TypeArguments="x:String" Name="ProcessType" />
+      <Variable x:TypeArguments="x:String" Name="SelectedEntity" />
+      <Variable x:TypeArguments="s:String[]" Name="SelectedPolicyRoles" />
+      <Variable x:TypeArguments="x:String" Name="DeploymentMovement" />
+      <Variable x:TypeArguments="x:String" Name="strFormOutput" />
+      <Variable x:TypeArguments="x:Boolean" Name="boolDismissed" />
+      <Variable x:TypeArguments="x:String" Name="strSelectedButton" />
+    </Sequence.Variables>
+
+    <ui:ReadTextFile DisplayName="Read Entity Config (Data\entity-config.json)" FileName="Data\entity-config.json">
+      <ui:ReadTextFile.Content>
+        <OutArgument x:TypeArguments="x:String">[strEntityConfig]</OutArgument>
+      </ui:ReadTextFile.Content>
+    </ui:ReadTextFile>
+
+    <ui:LogMessage DisplayName="Log Config Loaded" Level="Info" Message="[&quot;Entity config loaded: &quot; &amp; CType(JObject.Parse(strEntityConfig)(&quot;entities&quot;), JArray).Count.ToString &amp; &quot; entities&quot;]" />
+
+    <uf:FormActivity DisplayName="Create Form - RPA Change &amp; Deployment Request" GenerateInputFields="False">
+      <uf:FormActivity.FormTitle>
+        <InArgument x:TypeArguments="x:String">RPA Change &amp; Deployment Request</InArgument>
+      </uf:FormActivity.FormTitle>
+      <uf:FormActivity.FormFieldsCollection>
+        <scg:Dictionary x:TypeArguments="x:String, Argument">
+          <InArgument x:TypeArguments="x:String" x:Key="EntityConfig">[strEntityConfig]</InArgument>
+          <OutArgument x:TypeArguments="x:String" x:Key="ProcessType">[ProcessType]</OutArgument>
+          <OutArgument x:TypeArguments="x:String" x:Key="SelectedEntity">[SelectedEntity]</OutArgument>
+          <OutArgument x:TypeArguments="x:String" x:Key="DeploymentMovement">[DeploymentMovement]</OutArgument>
+        </scg:Dictionary>
+      </uf:FormActivity.FormFieldsCollection>
+      <uf:FormActivity.FormFieldsOutputData>
+        <OutArgument x:TypeArguments="x:String">[strFormOutput]</OutArgument>
+      </uf:FormActivity.FormFieldsOutputData>
+      <uf:FormActivity.Dismissed>
+        <OutArgument x:TypeArguments="x:Boolean">[boolDismissed]</OutArgument>
+      </uf:FormActivity.Dismissed>
+      <uf:FormActivity.SelectedButton>
+        <OutArgument x:TypeArguments="x:String">[strSelectedButton]</OutArgument>
+      </uf:FormActivity.SelectedButton>
+    </uf:FormActivity>
+
+    <If DisplayName="Form submitted?">
+      <If.Condition>
+        <InArgument x:TypeArguments="x:Boolean">[boolDismissed OrElse String.IsNullOrWhiteSpace(strFormOutput)]</InArgument>
+      </If.Condition>
+      <If.Then>
+        <ui:LogMessage DisplayName="Log Form Dismissed" Level="Warn" Message="The request form was closed without being submitted." />
+      </If.Then>
+      <If.Else>
+        <Sequence DisplayName="Read Submitted Values">
+          <!-- Multi-select arrives as a JSON array, so it is read from the form output JSON -->
+          <Assign DisplayName="Assign SelectedPolicyRoles">
+            <Assign.To>
+              <OutArgument x:TypeArguments="s:String[]">[SelectedPolicyRoles]</OutArgument>
+            </Assign.To>
+            <Assign.Value>
+              <InArgument x:TypeArguments="s:String[]">[If(JObject.Parse(strFormOutput).SelectToken("SelectedPolicyRoles") Is Nothing, New String() {}, JObject.Parse(strFormOutput).SelectToken("SelectedPolicyRoles").ToObject(Of String()))]</InArgument>
+            </Assign.Value>
+          </Assign>
+          <!-- Fallbacks in case the field bindings return empty in your package version -->
+          <Assign DisplayName="Assign ProcessType (fallback)">
+            <Assign.To>
+              <OutArgument x:TypeArguments="x:String">[ProcessType]</OutArgument>
+            </Assign.To>
+            <Assign.Value>
+              <InArgument x:TypeArguments="x:String">[If(String.IsNullOrEmpty(ProcessType), JObject.Parse(strFormOutput).Value(Of String)("ProcessType"), ProcessType)]</InArgument>
+            </Assign.Value>
+          </Assign>
+          <Assign DisplayName="Assign SelectedEntity (fallback)">
+            <Assign.To>
+              <OutArgument x:TypeArguments="x:String">[SelectedEntity]</OutArgument>
+            </Assign.To>
+            <Assign.Value>
+              <InArgument x:TypeArguments="x:String">[If(String.IsNullOrEmpty(SelectedEntity), JObject.Parse(strFormOutput).Value(Of String)("SelectedEntity"), SelectedEntity)]</InArgument>
+            </Assign.Value>
+          </Assign>
+          <Assign DisplayName="Assign DeploymentMovement (fallback)">
+            <Assign.To>
+              <OutArgument x:TypeArguments="x:String">[DeploymentMovement]</OutArgument>
+            </Assign.To>
+            <Assign.Value>
+              <InArgument x:TypeArguments="x:String">[If(String.IsNullOrEmpty(DeploymentMovement), JObject.Parse(strFormOutput).Value(Of String)("DeploymentMovement"), DeploymentMovement)]</InArgument>
+            </Assign.Value>
+          </Assign>
+          <ui:LogMessage DisplayName="Log Request Summary" Level="Info" Message="[&quot;Process Type: &quot; &amp; ProcessType &amp; &quot; | Entity: &quot; &amp; SelectedEntity &amp; &quot; | Policy Roles: &quot; &amp; String.Join(&quot;, &quot;, SelectedPolicyRoles) &amp; &quot; | Deployment Movement: &quot; &amp; DeploymentMovement]" />
+          <ui:MessageBox DisplayName="Show Request Summary" Caption="RPA Change &amp; Deployment Request" Text="[&quot;Request captured:&quot; &amp; Environment.NewLine &amp; Environment.NewLine &amp; &quot;Process Type: &quot; &amp; ProcessType &amp; Environment.NewLine &amp; &quot;Entity: &quot; &amp; SelectedEntity &amp; Environment.NewLine &amp; &quot;Policy Roles: &quot; &amp; String.Join(&quot;, &quot;, SelectedPolicyRoles) &amp; Environment.NewLine &amp; &quot;Deployment Movement: &quot; &amp; DeploymentMovement]" />
+        </Sequence>
+      </If.Else>
+    </If>
+  </Sequence>
+</Activity>
